@@ -40,9 +40,7 @@ def extract_users(page_size: int = 30) -> list[dict[str, Any]]:
     return users
 
 
-raw_users = extract_users()
-#print(raw_users)
-            
+
 
 
 #Criação das tabelas (DDL)
@@ -187,9 +185,21 @@ def load_data(conn: sqlite3.Connection, users: list[dict[str, Any]]) -> None:
 
 
 
-    
-connection = sqlite3.connect("users.db")
-create_tables(connection)
-load_data(connection, raw_users)
-connection.close()
 
+#Orquestração do ETL
+
+def run(path):
+    raw_users = extract_users()
+
+    conn = sqlite3.connect(path)
+    try:
+        create_tables(conn)
+        load_data(conn, raw_users)
+    except Exception as e:
+        logger.exception("Erro durante a execução do ETL %s", e)
+    finally:
+        conn.close()
+        logger.info("Conexão com o banco de dados fechada.")
+
+if __name__ == "__main__":
+    run("users.db")
