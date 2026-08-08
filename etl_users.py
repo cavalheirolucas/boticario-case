@@ -1,7 +1,9 @@
 
 import logging
+import sqlite3
 from typing import Any
 import requests as re
+
 
 
 API_BASE_URL = 'https://dummyjson.com/users'
@@ -38,6 +40,65 @@ def extract_users(page_size: int = 30) -> list[dict[str, Any]]:
     return users
 
 
-raw_users = extract_users(page_size=30)
-print(raw_users)
+raw_users = extract_users()
+#print(raw_users)
             
+
+
+#Criação das tabelas (DDL)
+
+
+DDL = [
+    """
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY,
+        first_name TEXT NOT NULL,
+        lastName TEXT NOT NULL,
+        age INTEGER,
+        gender TEXT,      
+        email TEXT,
+        phone TEXT,
+        username TEXT,  
+        birthDate TEXT,
+        university TEXT);
+
+        """,
+
+        """
+        CREATE TABLE IF NOT EXISTS address (
+            user_id INTEGER PRIMARY KEY,
+            address TEXT,
+            city TEXT,
+            state TEXT,
+            stateCode TEXT,      
+            postalCode  TEXT,
+            country TEXT,
+            lat REAL,  
+            lng REAL,
+            FOREIGN KEY (user_id) REFERENCES users (id));
+        """,
+
+        """
+        CREATE TABLE IF NOT EXISTS company (
+            user_id INTEGER PRIMARY KEY,
+            department TEXT,
+            name TEXT,
+            title TEXT,
+            city TEXT,      
+            state  TEXT,
+            country TEXT,
+            FOREIGN KEY (user_id) REFERENCES users (id));
+        """
+        ]
+
+def create_tables(conn: sqlite3.Connection):
+    cursor = conn.cursor()
+
+    for ddl in DDL:
+        cursor.execute(ddl)
+    conn.commit()
+    logger.info("Tabelas criadas com sucesso.")
+
+connection = sqlite3.connect("users.db")
+create_tables(connection)
+connection.close()
