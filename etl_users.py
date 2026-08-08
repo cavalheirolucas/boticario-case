@@ -99,6 +99,93 @@ def create_tables(conn: sqlite3.Connection):
     conn.commit()
     logger.info("Tabelas criadas com sucesso.")
 
+
+
+
+#Ingestão dos dados nas tabelas
+
+
+def user_table(data: dict[str, Any]):
+    return (
+        data['id'],
+        data['firstName'],
+        data['lastName'],
+        data['age'],
+        data['gender'],
+        data['email'],
+        data['phone'],
+        data['username'],
+        data['birthDate'],
+        data['university']
+    )
+
+
+def address_table(data: dict[str, Any]):
+    address = data.get('address')
+    coordinates = address.get('coordinates')
+    return (
+        data['id'],
+        address.get('address'),
+        address.get('city'),
+        address.get('state'),
+        address.get('stateCode'),
+        address.get('postalCode'),
+        address.get('country'),
+        coordinates.get('lat'),
+        coordinates.get('lng')
+    )
+
+def company_table(data: dict[str, Any]):
+    company = data.get('company')
+    address_company = company.get('address')
+    return (
+        data['id'],
+        company.get('department'),
+        company.get('name'),
+        company.get('title'),
+        address_company.get('city'),
+        address_company.get('state'),
+        address_company.get('country')
+    )
+
+
+def load_data(conn: sqlite3.Connection, users: list[dict[str, Any]]) -> None:
+
+    user = [user_table(user) for user in users]
+    address = [address_table(user) for user in users]
+    company = [company_table(user) for user in users]
+
+    cursor = conn.cursor()
+
+    cursor.executemany(
+        """
+        INSERT INTO users (
+            id, first_name, lastName, age, gender, email, phone, username, birthDate, university)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, user)
+
+    cursor.executemany(
+            """
+            INSERT INTO address (
+                user_id, address, city, state, stateCode, postalCode, country, lat, lng)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, address)
+
+    cursor.executemany(
+                """
+                INSERT INTO company (
+                    user_id, department, name, title, city, state, country)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, company)
+
+    conn.commit()
+    logger.info("Dados carregados com sucesso nas tabelas.")
+
+
+
+    
 connection = sqlite3.connect("users.db")
 create_tables(connection)
+load_data(connection, raw_users)
 connection.close()
+
