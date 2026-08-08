@@ -1,0 +1,18 @@
+[project]
+name = "boticario-case"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "lucas-m-cavalheiro",email = "lucas.cavalheiro@solfacil.com.br"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "requests (>=2.34.2,<3.0.0)",
+    "logging (>=0.4.9.6,<0.5.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
