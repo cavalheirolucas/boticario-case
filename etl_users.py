@@ -94,6 +94,10 @@ DDL = [
 def create_tables(conn: sqlite3.Connection):
     cursor = conn.cursor()
 
+    cursor.execute("DROP TABLE IF EXISTS company;")
+    cursor.execute("DROP TABLE IF EXISTS address;")
+    cursor.execute("DROP TABLE IF EXISTS users;")
+
     for ddl in DDL:
         cursor.execute(ddl)
     conn.commit()
@@ -108,44 +112,44 @@ def create_tables(conn: sqlite3.Connection):
 def user_table(data: dict[str, Any]):
     return (
         data['id'],
-        data['firstName'],
-        data['lastName'],
-        data['age'],
-        data['gender'],
-        data['email'],
-        data['phone'],
-        data['username'],
-        data['birthDate'],
-        data['university']
+        data.get('firstName'),
+        data.get('lastName'),
+        data.get('age'),
+        data.get('gender'),
+        data.get('email'),
+        data.get('phone'),
+        data.get('username'),
+        data.get('birthDate'),
+        data.get('university')
     )
 
 
 def address_table(data: dict[str, Any]):
     address = data.get('address')
-    coordinates = address.get('coordinates')
+    coordinates = address.get('coordinates') if address else None
     return (
         data['id'],
-        address.get('address'),
-        address.get('city'),
-        address.get('state'),
-        address.get('stateCode'),
-        address.get('postalCode'),
-        address.get('country'),
-        coordinates.get('lat'),
-        coordinates.get('lng')
+        address.get('address') if address else None,
+        address.get('city') if address else None,
+        address.get('state') if address else None,
+        address.get('stateCode') if address else None,
+        address.get('postalCode') if address else None,
+        address.get('country') if address else None,
+        coordinates.get('lat') if coordinates else None,
+        coordinates.get('lng') if coordinates else None
     )
 
 def company_table(data: dict[str, Any]):
     company = data.get('company')
-    address_company = company.get('address')
+    address_company = company.get('address') if company else None
     return (
         data['id'],
-        company.get('department'),
-        company.get('name'),
-        company.get('title'),
-        address_company.get('city'),
-        address_company.get('state'),
-        address_company.get('country')
+        company.get('department') if company else None,
+        company.get('name') if company else None,
+        company.get('title') if company else None,
+        address_company.get('city') if address_company else None,
+        address_company.get('state') if address_company else None,
+        address_company.get('country') if address_company else None
     )
 
 
