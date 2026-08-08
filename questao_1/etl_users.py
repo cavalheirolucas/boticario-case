@@ -51,13 +51,13 @@ DDL = [
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY,
         first_name TEXT NOT NULL,
-        lastName TEXT NOT NULL,
+        last_name TEXT NOT NULL,
         age INTEGER,
         gender TEXT,      
         email TEXT,
         phone TEXT,
         username TEXT,  
-        birthDate TEXT,
+        birth_date TEXT,
         university TEXT);
 
         """,
@@ -68,8 +68,8 @@ DDL = [
             address TEXT,
             city TEXT,
             state TEXT,
-            stateCode TEXT,      
-            postalCode  TEXT,
+            state_code TEXT,      
+            postal_code  TEXT,
             country TEXT,
             lat REAL,  
             lng REAL,
@@ -162,14 +162,14 @@ def load_data(conn: sqlite3.Connection, users: list[dict[str, Any]]) -> None:
     cursor.executemany(
         """
         INSERT INTO users (
-            id, first_name, lastName, age, gender, email, phone, username, birthDate, university)
+            id, first_name, last_name, age, gender, email, phone, username, birth_date, university)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, user)
 
     cursor.executemany(
             """
             INSERT INTO address (
-                user_id, address, city, state, stateCode, postalCode, country, lat, lng)
+                user_id, address, city, state, state_code, postal_code, country, lat, lng)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, address)
 

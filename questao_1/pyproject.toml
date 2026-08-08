@@ -1,5 +1,5 @@
 [project]
-name = "boticario-case"
+name = "questao-1"
 version = "0.1.0"
 description = ""
 authors = [
@@ -8,8 +8,7 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "requests (>=2.34.2,<3.0.0)",
-    "logging (>=0.4.9.6,<0.5.0.0)"
+    "requests (>=2.34.2,<3.0.0)"
 ]
 
 
