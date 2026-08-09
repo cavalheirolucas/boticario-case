@@ -2,7 +2,12 @@ import logging
 import pandas as pd
 import os
 import shutil
+from datetime import datetime
 from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow import DAG
+from airflow.sensors.filesystem import FileSensor
+from airflow.operators.python import PythonOperator, BranchPythonOperator
+from airflow.operators.empty import EmptyOperator
 
 logger = logging.getLogger()
 
@@ -122,7 +127,7 @@ def carregar_banco():
     df = pd.read_csv(CAMINHO_SAIDA)
 
     colunas = ["cpf_cliente","id_contrato","data_pagamento","data_vencimento","valor_pago"]
-    registros = list(df[colunas].itertuples(index=False, Name=None))
+    registros = list(df[colunas].itertuples(index=False, name=None))
 
     hook = PostgresHook(postgres_conn_id=CONN_ID_DB_PRODUCAO)
     conn = hook.get_conn()
@@ -151,3 +156,56 @@ def arquivar_log():
         shutil.copy(CAMINHO_ARQUIVO, CAMINHO_LOG)
     logger.info("Arquivado em %s", CAMINHO_LOG)
 
+
+
+# Construção da DAG
+
+DEFAULT_ARGS = {
+    "owner":"time-cobranca",
+    "retries":3
+}
+
+with DAG(
+    dag_id = "dag_regua_cobranca",
+    description = "Atualizacao diaria da regua de Cobranca a partir do aqruivo de pagamentos",
+    default_args = DEFAULT_ARGS,
+    schedule = "0 6 * * *",
+    start_date = datetime(2026, 8, 9),
+    catchup = False
+) as dag:
+
+    aguardar_arquivo = FileSensor(
+        task_id="aguardar_arquivo_pagamentos",
+        filepath=CAMINHO_ARQUIVO,
+        poke_interval=300
+    )
+
+    processar = PythonOperator(
+        task_id="processar_arquivo",
+        python_callable=processar_arquivo
+    )
+
+    decidir = BranchPythonOperator(
+            task_id="decidir_destino",
+            python_callable=destino_arquivo
+        )
+
+    carregar = PythonOperator(
+            task_id="carregar_banco",
+            python_callable=carregar_banco
+        )
+
+    arquivar = PythonOperator(
+            task_id="arquivar_log",
+            python_callable=arquivar_log
+        )
+
+    fim = EmptyOperator(
+        task_id = "fim_pipeline",
+        trigger_rule="none_failed_min_one_success"
+    )
+
+
+    aguardar_arquivo >> processar >> decidir
+    decidir >> carregar >> fim
+    decidir >> arquivar >> fim
