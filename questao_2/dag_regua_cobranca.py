@@ -1,7 +1,8 @@
 import logging
 import pandas as pd
 import os
-import psycopg2
+import shutil
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 logger = logging.getLogger()
 
@@ -10,10 +11,14 @@ logger = logging.getLogger()
 #Caminho fícticio do arquivo de entrada, que será lido pela DAG.
 DIRETORIO_ENTRADA = "/data/cobranca/entrada"
 DIRETORIO_PROCESSADOS = "/data/cobranca/processados"
+DIRETORIO_LOG = "/data/cobranca/log_arquivado"
 NOME_ARQUIVO = "pagamentos_d-1.csv"
 
 CAMINHO_ARQUIVO = f"{DIRETORIO_ENTRADA}/{NOME_ARQUIVO}"
 CAMINHO_SAIDA = f"{DIRETORIO_PROCESSADOS}/pagamentos_validados.csv"
+CAMINHO_LOG = f"{DIRETORIO_LOG}/{NOME_ARQUIVO}"
+
+CONN_ID_DB_PRODUCAO = "postgres_cobranca_prd"
 
 #Colunas fícticias relacionadas a dados de cobrança somente para exemplificar validação dos dados.
 COLUNAS_ESPERADAS = {
@@ -95,7 +100,7 @@ def processar_arquivo(**context):
     df.to_csv(f"{CAMINHO_SAIDA}", index=False)
     logger.info("Arquivo de saída gravado em: %s", CAMINHO_SAIDA)
 
-    return CAMINHO_SAIDA
+    
 
 
 
@@ -108,5 +113,41 @@ def destino_arquivo(**context):
         return 'carregar_banco'
     return 'arquivar_log'
 
+
+
+
+def carregar_banco():
+
     
+    df = pd.read_csv(CAMINHO_SAIDA)
+
+    colunas = ["cpf_cliente","id_contrato","data_pagamento","data_vencimento","valor_pago"]
+    registros = list(df[colunas].itertuples(index=False, Name=None))
+
+    hook = PostgresHook(postgres_conn_id=CONN_ID_DB_PRODUCAO)
+    conn = hook.get_conn()
+
+    cursor = conn.cursor()
+    try:
+        cursor.executemany(
+            f"""
+            INSERT INTO regua_cobranca
+            (cpf_cliente, id_contrato, data_pagamento, data_vencimento, valor_pago)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            registros
+        )
+        logger.info("%s linha(s) carregada(s) no banco de producao.", len(registros))
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
+
+    
+def arquivar_log():
+
+    logger.info("Fim de semana, gravando em %s", DIRETORIO_LOG)
+    if os.path.exists(CAMINHO_ARQUIVO):
+        shutil.copy(CAMINHO_ARQUIVO, CAMINHO_LOG)
+    logger.info("Arquivado em %s", CAMINHO_LOG)
 
