@@ -86,6 +86,16 @@ DDL = [
             state  TEXT,
             country TEXT,
             FOREIGN KEY (user_id) REFERENCES users (id));
+        """,
+
+        """
+        CREATE TABLE IF NOT EXISTS bank (
+            user_id INTEGER PRIMARY KEY,
+            card_expire TEXT,
+            card_number TEXT,
+            card_type TEXT,
+            currency TEXT,      
+            FOREIGN KEY (user_id) REFERENCES users (id));
         """
         ]
 
@@ -95,6 +105,7 @@ def create_tables(conn: sqlite3.Connection):
     cursor.execute("DROP TABLE IF EXISTS company;")
     cursor.execute("DROP TABLE IF EXISTS address;")
     cursor.execute("DROP TABLE IF EXISTS users;")
+    cursor.execute("DROP TABLE IF EXISTS bank;")
 
     for ddl in DDL:
         cursor.execute(ddl)
@@ -150,12 +161,23 @@ def company_table(data: dict[str, Any]):
         address_company.get('country') if address_company else None
     )
 
+def bank_table(data: dict[str, Any]):
+    bank = data.get('bank')
+    return (
+        data['id'],
+        bank.get('cardExpire') if bank else None,
+        bank.get('cardNumber') if bank else None,
+        bank.get('cardType') if bank else None,
+        bank.get('currency') if bank else None
+        )
+
 
 def load_data(conn: sqlite3.Connection, users: list[dict[str, Any]]) -> None:
 
     user = [user_table(user) for user in users]
     address = [address_table(user) for user in users]
     company = [company_table(user) for user in users]
+    bank = [bank_table(user) for user in users]
 
     cursor = conn.cursor()
 
@@ -179,6 +201,13 @@ def load_data(conn: sqlite3.Connection, users: list[dict[str, Any]]) -> None:
                     user_id, department, name, title, city, state, country)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 """, company)
+
+    cursor.executemany(
+                """
+                INSERT INTO bank (
+                    user_id, card_expire, card_number, card_type, currency)
+                VALUES (?, ?, ?, ?, ?)
+                """, bank)
 
     conn.commit()
     logger.info("Dados carregados com sucesso nas tabelas.")
