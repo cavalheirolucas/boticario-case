@@ -61,7 +61,7 @@ UNION ALL
 
 -- 4. [users + cartoes] % de usuários jovens (< 35 anos) com cartão premium.
 -- ESTRATÉGIA: Identificar percentual do grupo de alto potencial de crescimento.
--- Um percentual alto indica que o perfil do público-alvo é de alto potencial de crescimento financeiro precoce e consequentemente maior poder de compra no futuro.
+-- Um percentual alto indica que o perfil do público-alvo é de alto potencial de crescimento financeiro e consequentemente maior poder de compra no futuro.
 
 
 select 
