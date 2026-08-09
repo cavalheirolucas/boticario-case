@@ -1,7 +1,7 @@
 import logging
 import pandas as pd
 import os
-
+import psycopg2
 
 logger = logging.getLogger()
 
@@ -51,29 +51,29 @@ def processar_arquivo(**context):
     df['data_pagamento'] = pd.to_datetime(df['data_pagamento'], errors="coerce")
 
     data_invalida = df["data_pagamento"].isna()
-    df.loc[data_invalida, "motivo_validacao"] += "data_pagamento ausente ou invalida, "
+    df.loc[data_invalida, "motivo_validacao"] += "data_pagamento ausente ou invalida| "
     
     data_execucao = context["logical_date"].date()
     data_no_futuro = df["data_pagamento"].notna() & (df["data_pagamento"].dt.date > data_execucao)
-    df.loc[data_no_futuro, "motivo_validacao"] += "data_pagamento no futuro,"
+    df.loc[data_no_futuro, "motivo_validacao"] += "data_pagamento no futuro| "
 
     #validação do valor pago: não pode ser nulo, nem negativo
     df["valor_pago"] = pd.to_numeric(df["valor_pago"], errors="coerce")
     valor_invalido = df["valor_pago"].isna()
-    df.loc[valor_invalido, "motivo_validacao"] += "valor_pago ausente ou invalido; "
+    df.loc[valor_invalido, "motivo_validacao"] += "valor_pago ausente ou invalido| "
 
     valor_negativo = df["valor_pago"].notna() & (df["valor_pago"] < 0)
-    df.loc[valor_negativo, "motivo_validacao"] += "valor_pago negativo; "
+    df.loc[valor_negativo, "motivo_validacao"] += "valor_pago negativo| "
 
     #validação de duplicidade: não pode haver mais de um pagamento para o mesmo contrato no mesmo dia
     duplicadas = df.duplicated(subset=["cpf_cliente", "id_contrato", "data_pagamento"])
-    df.loc[duplicadas, "motivo_validacao"] += "pagamento duplicado; "
+    df.loc[duplicadas, "motivo_validacao"] += "pagamento duplicado| "
 
     #validação do CPF: não pode ter tamanho diferente de 11
     cpf_tamanho_errado = (
         df["cpf_cliente"].astype(str).str.replace(r"\D", "", regex=True).str.len() != 11
     )
-    df.loc[cpf_tamanho_errado, "motivo_validacao"] += "cpf com formato estranho; "
+    df.loc[cpf_tamanho_errado, "motivo_validacao"] += "cpf com formato estranho| "
 
     #Coluna de status de validação: "valido" ou "pendente"
     df["status_validacao"] = df["motivo_validacao"].apply(
@@ -92,7 +92,7 @@ def processar_arquivo(**context):
 
 
     os.makedirs(DIRETORIO_PROCESSADOS, exist_ok=True)
-    df.to_csv(f"{DIRETORIO_PROCESSADOS}/pagamentos_processados.csv", index=False)
+    df.to_csv(f"{CAMINHO_SAIDA}", index=False)
     logger.info("Arquivo de saída gravado em: %s", CAMINHO_SAIDA)
 
     return CAMINHO_SAIDA
@@ -109,5 +109,4 @@ def destino_arquivo(**context):
     return 'arquivar_log'
 
     
-
 
