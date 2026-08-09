@@ -20,7 +20,6 @@ DIRETORIO_LOG = "/data/cobranca/log_arquivado"
 NOME_ARQUIVO = "pagamentos_d-1.csv"
 
 CAMINHO_ARQUIVO = f"{DIRETORIO_ENTRADA}/{NOME_ARQUIVO}"
-CAMINHO_SAIDA = f"{DIRETORIO_PROCESSADOS}/pagamentos_validados.csv"
 CAMINHO_LOG = f"{DIRETORIO_LOG}/{NOME_ARQUIVO}"
 
 CONN_ID_DB_PRODUCAO = "postgres_cobranca_prd"
@@ -100,10 +99,12 @@ def processar_arquivo(**context):
         qtd_pendente,
     )
 
-
+    CAMINHO_SAIDA = f"{DIRETORIO_PROCESSADOS}/pagamentos_validados_{data_execucao}.csv"
     os.makedirs(DIRETORIO_PROCESSADOS, exist_ok=True)
     df.to_csv(f"{CAMINHO_SAIDA}", index=False)
     logger.info("Arquivo de saída gravado em: %s", CAMINHO_SAIDA)
+
+    return CAMINHO_SAIDA
 
     
 
@@ -121,10 +122,11 @@ def destino_arquivo(**context):
 
 
 
-def carregar_banco():
+def carregar_banco(**context):
 
+    dados_processados = context['ti'].xcom_pull(task_ids=processar_arquivo)
     
-    df = pd.read_csv(CAMINHO_SAIDA)
+    df = pd.read_csv(dados_processados)
 
     colunas = ["cpf_cliente","id_contrato","data_pagamento","data_vencimento","valor_pago"]
     registros = list(df[colunas].itertuples(index=False, name=None))
