@@ -1,5 +1,6 @@
 import logging
 import pandas as pd
+import os
 
 
 logger = logging.getLogger()
@@ -8,8 +9,11 @@ logger = logging.getLogger()
 
 #Caminho fícticio do arquivo de entrada, que será lido pela DAG.
 DIRETORIO_ENTRADA = "/data/cobranca/entrada"
+DIRETORIO_PROCESSADOS = "/data/cobranca/processados"
 NOME_ARQUIVO = "pagamentos_d-1.csv"
+
 CAMINHO_ARQUIVO = f"{DIRETORIO_ENTRADA}/{NOME_ARQUIVO}"
+CAMINHO_SAIDA = f"{DIRETORIO_PROCESSADOS}/pagamentos_validados.csv"
 
 #Colunas fícticias relacionadas a dados de cobrança somente para exemplificar validação dos dados.
 COLUNAS_ESPERADAS = {
@@ -85,3 +89,25 @@ def processar_arquivo(**context):
         len(df),
         qtd_pendente,
     )
+
+
+    os.makedirs(DIRETORIO_PROCESSADOS, exist_ok=True)
+    df.to_csv(f"{DIRETORIO_PROCESSADOS}/pagamentos_processados.csv", index=False)
+    logger.info("Arquivo de saída gravado em: %s", CAMINHO_SAIDA)
+
+    return CAMINHO_SAIDA
+
+
+
+def destino_arquivo(**context):
+
+    data_execucao = context["logical_date"]
+    dia_da_semana = data_execucao.weekday()  
+
+    if dia_da_semana < 5:
+        return 'carregar_banco'
+    return 'arquivar_log'
+
+    
+
+
