@@ -92,13 +92,27 @@ def load(df: pd.DataFrame, metas: pd.DataFrame):
         )
     """)
 
+    RENAME_MAP = {
+    "ID venda": "id_venda", "Data": "data", "Canal": "canal",
+    "Tipo_pagamento": "tipo_pagamento", "Estado": "estado", "Cidade": "cidade",
+    "Produto": "produto", "Quantidade": "quantidade", "Valor_Unitario": "valor_unitario",
+    "Custo_Unitario": "custo_unitario", "Categoria_Produto": "categoria_produto",
+    "ID_Parceiro": "id_parceiro", "ID_Cliente": "id_cliente",
+    "Genero_Cliente": "genero_cliente", "Data_Nascimento_Cliente": "data_nascimento_cliente",
+    "Feedback_Cliente": "feedback_cliente", "Status_Entrega": "status_entrega",
+    "Cupom_Utilizado": "cupom_utilizado", "Flag_Primeira_Compra": "flag_primeira_compra",
+    "Flag_Outlier_Qtd": "flag_outlier_qtd", "Ano": "ano", "Mês": "mes",
+    "Receita": "receita", "Custo": "custo", "Margem": "margem",
+}
+
     cols = ['id_venda','data','ano','mes','canal','tipo_pagamento','estado','cidade','produto',
     'quantidade','valor_unitario','custo_unitario','categoria_produto','id_parceiro','id_cliente',
     'genero_cliente','data_nascimento_cliente','feedback_cliente','status_entrega','cupom_utilizado',
     'flag_primeira_compra','flag_outlier_qtd','receita','custo','margem']
+
+    df = df.rename(columns=RENAME_MAP)
+    df = df[cols] 
     
-  
-   
     data = list(df.itertuples(index=False, name=None)) 
     col_names = ','.join(f'"{c}"' for c in cols)
 
